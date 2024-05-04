@@ -22,7 +22,7 @@ local MyTeamColor = LocalPlayer.TeamColor
 local HoldingM2 = false
 local Active = false
 local Lock = false
-local Epitaph = .187
+local Epitaph = 0
 local HeadOffset = Vector3.new(0, .1, 0)
 
 _G.TeamCheck = false
@@ -96,6 +96,157 @@ UIS.InputEnded:Connect(function(Input)
 end)
 game.StarterGui:SetCore("SendNotification", {Title = "So5lz Lock", Text = "Have Fun!", Duration = 5,})
 game.StarterGui:SetCore("SendNotification", {Title = "Discord: spotifso5lz", Text = "Okay!", Duration = 5,})
+end)
+
+So5lzSection:NewButton("So5lz's Lock 2 LessPred", "HOLDMOUSE2", function()
+    local Area = game:GetService("Workspace")
+    local RunService = game:GetService("RunService")
+    local UIS = game:GetService("UserInputService")
+    local Players = game:GetService("Players")
+    local LocalPlayer = Players.LocalPlayer
+    local MyCharacter = LocalPlayer.Character
+    local MyRoot = MyCharacter:FindFirstChild("HumanoidRootPart")
+    local MyHumanoid = MyCharacter:FindFirstChild("Humanoid")
+    local Mouse = LocalPlayer:GetMouse()
+    local MyView = Area.CurrentCamera
+    local MyTeamColor = LocalPlayer.TeamColor
+    local HoldingM2 = false
+    local Active = false
+    local Lock = false
+    local Epitaph = .187
+    local HeadOffset = Vector3.new(0, 0, 0)
+    
+    _G.TeamCheck = false
+    _G.AimPart = "HumanoidRootPart"
+    _G.Sensitivity = 0
+    _G.CircleSides = 64
+    _G.CircleColor = Color3.fromRGB(255, 0, 130)
+    _G.CircleTransparency = 0
+    _G.CircleRadius = 200
+    _G.CircleFilled = false
+    _G.CircleVisible = true
+    _G.CircleThickness = 1
+    
+    local FOVCircle = Drawing.new("Circle")
+    FOVCircle.Position = Vector2.new(MyView.ViewportSize.X / 2, MyView.ViewportSize.Y / 2)
+    FOVCircle.Radius = _G.CircleRadius
+    FOVCircle.Filled = _G.CircleFilled
+    FOVCircle.Color = _G.CircleColor
+    FOVCircle.Visible = _G.CircleVisible
+    FOVCircle.Transparency = _G.CircleTransparency
+    FOVCircle.NumSides = _G.CircleSides
+    FOVCircle.Thickness = _G.CircleThickness
+    
+    local function CursorLock()
+        UIS.MouseBehavior = Enum.MouseBehavior.LockCenter
+    end
+    local function UnLockCursor()
+        HoldingM2 = false Active = false Lock = false 
+        UIS.MouseBehavior = Enum.MouseBehavior.Default
+    end
+    function FindNearestPlayer()
+        local dist = math.huge
+        local Target = nil
+        for _, v in pairs(Players:GetPlayers()) do
+            if v ~= LocalPlayer and v.Character:FindFirstChild("Humanoid") and v.Character:FindFirstChild("Humanoid").Health > 0 and v.Character:FindFirstChild("HumanoidRootPart") and v then
+                local TheirCharacter = v.Character
+                local CharacterRoot, Visible = MyView:WorldToViewportPoint(TheirCharacter[_G.AimPart].Position)
+                if Visible then
+                    local RealMag = (Vector2.new(Mouse.X, Mouse.Y) - Vector2.new(CharacterRoot.X, CharacterRoot.Y)).Magnitude
+                    if RealMag < dist and RealMag < FOVCircle.Radius then
+                        dist = RealMag
+                        Target = TheirCharacter
+                    end
+                end
+            end
+        end
+        return Target
+    end
+    
+    UIS.InputBegan:Connect(function(Input)
+        if Input.UserInputType == Enum.UserInputType.MouseButton2 then
+            HoldingM2 = true
+            Active = true
+            Lock = true
+            if Active then
+                local The_Enemy = FindNearestPlayer()
+                while HoldingM2 do task.wait(.000001)
+                    if Lock and The_Enemy ~= nil then
+                        local Future = The_Enemy.HumanoidRootPart.CFrame + (The_Enemy.HumanoidRootPart.Velocity * Epitaph + HeadOffset)
+                        MyView.CFrame = CFrame.lookAt(MyView.CFrame.Position, Future.Position)
+                        CursorLock()
+                    end
+                end
+            end
+        end
+    end)
+    UIS.InputEnded:Connect(function(Input)
+        if Input.UserInputType == Enum.UserInputType.MouseButton2 then
+            UnLockCursor()
+        end
+    end)
+    game.StarterGui:SetCore("SendNotification", {Title = "So5lz Lock", Text = "Have Fun!", Duration = 5,})
+    game.StarterGui:SetCore("SendNotification", {Title = "Discord: spotifso5lz", Text = "Okay!", Duration = 5,})
+    end)
+
+So5lzSection:NewButton("Lock Resolver Press G", "none", function()
+    local player = game.Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoid = character:WaitForChild("Humanoid")
+    
+    local cameraLocked = false
+    local currentTarget = nil
+    local fovRadius = 50 -- Adjust the FOV radius as needed
+    local cameraOffset = Vector3.new(0, 0, 0) -- Default camera offset
+    
+    local function updateCamera()
+        if cameraLocked and currentTarget then
+            local targetPosition = currentTarget.Character.HumanoidRootPart.Position
+            local playerPosition = character.HumanoidRootPart.Position
+            local direction = (targetPosition - playerPosition).unit -- Direction vector towards the target
+            local lookAtPosition = playerPosition + direction * 10 -- Adjust the multiplier as needed
+            local cameraPosition = playerPosition + cameraOffset
+    
+            -- Calculate the rotation to look at the target
+            local lookAt = CFrame.new(cameraPosition, lookAtPosition)
+            game.Workspace.CurrentCamera.CFrame = lookAt
+        end
+    end
+    
+    game:GetService("RunService").RenderStepped:Connect(updateCamera)
+    
+    local function findNextTarget()
+        local players = game.Players:GetPlayers()
+        for _, targetPlayer in ipairs(players) do
+            if targetPlayer ~= player then
+                local targetPosition = targetPlayer.Character.HumanoidRootPart.Position
+                local playerPosition = character.HumanoidRootPart.Position
+                local distance = (targetPosition - playerPosition).magnitude
+                if distance <= fovRadius then
+                    currentTarget = targetPlayer
+                    print("Camera locked onto:", currentTarget.Name)
+                    return
+                end
+            end
+        end
+        currentTarget = nil
+        notif("No other players found within FOV radius.")
+    end
+    
+    local function onKeyPress(input)
+        if input.KeyCode == Enum.KeyCode.G then
+            cameraLocked = not cameraLocked
+            if cameraLocked then
+                findNextTarget()
+            else
+                currentTarget = nil
+            end
+            notif("Camera lock toggled:", cameraLocked)
+        end
+    end
+
+
+    game:GetService("UserInputService").InputBegan:Connect(onKeyPress)
 end)
 
 So5lzSection:NewButton("Fly Press X", "none", function()
@@ -305,68 +456,74 @@ SpeedSection:NewButton("Step 3 [press z]", "none", function()
     end)
 end)
  
+SpeedSection:NewSlider("WalkSpeed (dont work in some games)", "WalkSpeed", 500, 0, function(s) -- 500 (MaxValue) | 0 (MinValue)
+    game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = s
+end)
+
+
 local AntiLock = Window:NewTab("AntiLock")
 local AntiLockSection = AntiLock:NewSection("AntiLock")
 
-AntiLockSection:NewButton("AntiLock [DeSync]", "none", function()
-getgenv().Desync = false -- leave this on false
-getgenv().KeyBind = Enum.KeyCode.M
- 
-getgenv().DirectionToShoot = "Behind"
-
-local uis = game:service'UserInputService'
-uis.InputBegan:Connect(
-    function(a, t)
-        if not t then
-            if a.KeyCode == getgenv().KeyBind and getgenv().Desync == false then
-                getgenv().Desync = true
-                game.StarterGui:SetCore("SendNotification", {
-                    Title = "prime";
-                    Text = "ON";
-                    Icon = "rbxassetid://57254792";
-                    Duration = 5;
-                    })
-                elseif a.KeyCode == getgenv().KeyBind and getgenv().Desync == true then
-                getgenv().Desync = false
-                game.StarterGui:SetCore("SendNotification", {
-                    Title = "prime";
-                    Text = "TURNED OFF";
-                    Icon = "rbxassetid://57254792";
-                    Duration = 5;
-                    })
+AntiLockSection:NewButton("AntiLock So5lz Fly Ver", "none", function()
+    local Toggled = false
+    local KeyCode = 'v'
+     
+     
+    function AA()
+        local oldVelocity = game.Players.LocalPlayer.Character.HumanoidRootPart.Velocity
+        game.Players.LocalPlayer.Character.HumanoidRootPart.Velocity = Vector3.new(oldVelocity.X, -50, oldVelocity.Z)
+        game.Players.LocalPlayer.Character.HumanoidRootPart.Velocity = Vector3.new(oldVelocity.X, oldVelocity.Y, oldVelocity.Z)
+        game.Players.LocalPlayer.Character.HumanoidRootPart.Velocity = Vector3.new(oldVelocity.X, -150, oldVelocity.Z)
+        game.Players.LocalPlayer.Character.Humanoid.HipHeight = 0.14
+    end
+     
+    game:GetService('UserInputService').InputBegan:Connect(function(Key)
+        if Key.KeyCode == Enum.KeyCode[KeyCode:upper()] and not game:GetService('UserInputService'):GetFocusedTextBox() then
+            if Toggled then
+                Toggled = false
+                game.Players.LocalPlayer.Character.Humanoid.HipHeight = 0.85
+     
+            elseif not Toggled then
+                Toggled = true
+     
+                while Toggled do
+                    AA()
+                    task.wait()
+                end
             end
         end
+    end)
 end)
- 
-getgenv().Direction = nil
- 
-if getgenv().DirectionToShoot == "Behind" then
-getgenv().Direction = Vector3.new(0, 0, -1)
-elseif getgenv().DirectionToShoot == "Down" then
-getgenv().Direction = Vector3.new(0, -1, 0)
-elseif getgenv().DirectionToShoot == "ForWard" then
-getgenv().Direction = Vector3.new(0, 0, 1)
-elseif getgenv().DirectionToShoot == "Left" then
-getgenv().Direction = Vector3.new(-1, 0, 0)
-elseif getgenv().DirectionToShoot == "One" then
-getgenv().Direction = Vector3.new(1, 1, 1)
-elseif getgenv().DirectionToShoot == "Right" then
-getgenv().Direction = Vector3.new(1, 0, 0)
-elseif getgenv().DirectionToShoot == "Up" then
-getgenv().Direction = Vector3.new(0, 1, 0)
-elseif getgenv().DirectionToShoot == "Zero" then
-getgenv().Direction = Vector3.new(0, 0, 0)
-end
- 
- 
-game:GetService("RunService").heartbeat:Connect(function()
-    if getgenv().Desync == true then
-    local abc = game.Players.LocalPlayer.Character.HumanoidRootPart.Velocity
-    game.Players.LocalPlayer.Character.HumanoidRootPart.Velocity = getgenv().Direction * (2^16)
-    game:GetService("RunService").RenderStepped:Wait()
-    game.Players.LocalPlayer.Character.HumanoidRootPart.Velocity = abc
+
+AntiLockSection:NewButton("AntiLock So5lz Blatant On Lockers", "none", function()
+    local Toggled = false
+    local KeyCode = 'v'
+     
+     
+    function AA()
+        local oldVelocity = game.Players.LocalPlayer.Character.HumanoidRootPart.Velocity
+        game.Players.LocalPlayer.Character.HumanoidRootPart.Velocity = Vector3.new(oldVelocity.X, -50, oldVelocity.Z)
+        game.Players.LocalPlayer.Character.HumanoidRootPart.Velocity = Vector3.new(oldVelocity.X, oldVelocity.Y, oldVelocity.Z)
+        game.Players.LocalPlayer.Character.HumanoidRootPart.Velocity = Vector3.new(oldVelocity.X, -80, oldVelocity.Z)
+        game.Players.LocalPlayer.Character.Humanoid.HipHeight = 4.50
     end
-end)
+     
+    game:GetService('UserInputService').InputBegan:Connect(function(Key)
+        if Key.KeyCode == Enum.KeyCode[KeyCode:upper()] and not game:GetService('UserInputService'):GetFocusedTextBox() then
+            if Toggled then
+                Toggled = false
+                game.Players.LocalPlayer.Character.Humanoid.HipHeight = 1.10
+     
+            elseif not Toggled then
+                Toggled = true
+     
+                while Toggled do
+                    AA()
+                    task.wait()
+                end
+            end
+        end
+    end)
 end)
 
 local Random = Window:NewTab("Random")
@@ -1488,3 +1645,26 @@ RandomSection:NewButton("Da Hood SkinChanger", "YEAH NIGGA", function()
         game.StarterGui:SetCore("SendNotification", {Title = "Credits: spotifyso5lz, brav0912, year.gottem", Text = "spotifyso5lz", Duration = 5,})
         game.StarterGui:SetCore("SendNotification", {Title = "Loaded Check Inv", Text = "Discord: spotifyso5lz", Duration = 5,})
     end)
+---- end of random
+
+local Fun = Window:NewTab("Fun")
+local FunSection = Fun:NewSection("Fun")
+
+FunSection:NewTextBox("Player", "TpToUser", function(txt)
+    local plr = game:GetService("Players").LocalPlayer
+    for i,v in pairs(game:GetService("Players"):GetChildren()) do
+        if v.ClassName == "Player" and v.Name ~= plr.Name then
+            if v.Character:FindFirstChild("HumanoidRootPart") then
+                v.Character.HumanoidRootPart.CFrame = CFrame.new(plr.Character.HumanoidRootPart.Position)
+            end
+        end
+    end
+    
+end)
+
+FunSection:NewButton("ReJoin Server", "", function()
+    local TeleportService = game:GetService("TeleportService")
+    local Players = game:GetService("Players")
+    local LocalPlayer = Players.LocalPlayer
+        TeleportService:Teleport(game.PlaceId, LocalPlayer)
+end)
