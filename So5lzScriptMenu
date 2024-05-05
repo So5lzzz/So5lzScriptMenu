@@ -1668,3 +1668,75 @@ FunSection:NewButton("ReJoin Server", "", function()
     local LocalPlayer = Players.LocalPlayer
         TeleportService:Teleport(game.PlaceId, LocalPlayer)
 end)
+
+FunSection:NewButton("AnimationPack", "AnimPack", function()
+    loadstring(game:HttpGet("https://god-x.000webhostapp.com/linkAnimatorEdit.lua", true))()
+end)
+
+FunSection:NewButton("SpinBot+AimLock",  "SpinBot bros csgo :skull:", function()
+    local UserInputService = game:GetService("UserInputService")
+    local RunService = game:GetService("RunService")
+    local Camera = game.Workspace.CurrentCamera
+    
+    local player = game.Players.LocalPlayer
+    local character = player.Character or player.CharacterAdded:Wait()
+    local humanoid = character:WaitForChild("Humanoid")
+    
+    local targetPlayer = nil
+    local isLocked = false
+    
+    local function rotateToTarget(target)
+        local direction = (target.Position - character.HumanoidRootPart.Position).unit
+        local lookVector = Vector3.new(direction.X, 0, direction.Z).unit
+        character:SetPrimaryPartCFrame(CFrame.new(character.HumanoidRootPart.Position, character.HumanoidRootPart.Position + lookVector))
+    end
+    
+    local function findClosestPlayer()
+        local closestPlayer = nil
+        local shortestDistance = math.huge
+        local characterPosition = character:WaitForChild("HumanoidRootPart").Position
+        for _, otherPlayer in ipairs(game.Players:GetPlayers()) do
+            if otherPlayer ~= player then
+                local otherCharacter = otherPlayer.Character
+                if otherCharacter then
+                    local otherHumanoid = otherCharacter:FindFirstChildOfClass("Humanoid")
+                    if otherHumanoid then
+                        local distance = (otherCharacter:WaitForChild("HumanoidRootPart").Position - characterPosition).magnitude
+                        if distance < shortestDistance then
+                            closestPlayer = otherCharacter:WaitForChild("HumanoidRootPart")
+                            shortestDistance = distance
+                        end
+                    end
+                end
+            end
+        end
+        return closestPlayer
+    end
+    
+    UserInputService.InputBegan:Connect(function(input, isProcessed)
+        if isProcessed then return end
+        if input.KeyCode == Enum.KeyCode.J then
+            if isLocked then
+                targetPlayer = nil
+                isLocked = false
+            else
+                targetPlayer = findClosestPlayer()
+                isLocked = true
+            end
+        end
+    end)
+    
+    RunService.RenderStepped:Connect(function(deltaTime)
+        if targetPlayer then
+            -- Rotate character towards the target player
+            rotateToTarget(targetPlayer)
+            -- Rotate camera to look at the target player
+            Camera.CFrame = CFrame.new(Camera.CFrame.Position, targetPlayer.Position)
+        else
+            -- Always update spinning behavior even if no target is locked
+            character:SetPrimaryPartCFrame(character.PrimaryPart.CFrame * CFrame.Angles(0, deltaTime * 10, 0)) -- Increased spinning speed
+        end
+    end)
+    
+
+end)
